@@ -4,82 +4,52 @@
 <meta charset="UTF-8">
 <title>UNDEOBFUSCATEABLE 2025</title>
 <style>
-body{margin:0;padding:0;background:#000;color:#0f0;font-family:Consolas;overflow:hidden}
-.bg{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(45deg,#000,#0a0a1f,#1a0033);background-size:600%;animation:g 20s infinite;z-index:-1}
-@keyframes g{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.c{width:90%;max-width:960px;margin:50px auto;padding:35px;background:rgba(0,0,15,0.85);border:3px solid #00ff00;border-radius:20px;box-shadow:0 0 60px #00ff00}
-textarea{width:100%;height:340px;background:#000;color:#00ff00;border:2px solid #00ff00;border-radius:12px;padding:16px;font-size:15px;resize:none;outline:none}
-button{margin:15px 10px 0;padding:16px 34px;background:#00ff00;color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:bold;font-size:17px;transition:.3s}
-button:hover{background:#33ff33;transform:scale(1.08)}
-#copy,#download{display:none}
-#s{margin-top:12px;color:#00ff00;font-size:16px}
+  body{margin:0;padding:0;background:#000;color:#0f0;font-family:Consolas;overflow:hidden}
+  .bg{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(45deg,#000,#0a0a1f,#1a0033);background-size:600%;animation:g 20s infinite;z-index:-1}
+  @keyframes g{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .c{width:90%;max-width:960px;margin:50px auto;padding:35px;background:rgba(0,0,15,0.9);border:3px solid #00ff00;border-radius:20px;box-shadow:0 0 60px #00ff00}
+  textarea{width:100%;height:400px;background:#000;color:#00ff00;border:2px solid #00ff00;border-radius:12px;padding:16px;font-size:15px;resize:none;outline:none}
+  button{margin:20px auto;display:block;padding:18px 40px;background:#00ff00;color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:bold;font-size:20px;transition:.3s}
+  button:hover{background:#33ff33;transform:scale(1.1)}
+  h1{text-align:center;color:#00ff00;text-shadow:0 0 30px #00ff00}
+  #s{margin-top:15px;text-align:center;font-size:17px}
 </style>
 <script src="https://unpkg.com/fengari-web/dist/fengari-web.js"></script>
 </head>
 <body>
 <div class="bg"></div>
 <div class="c">
-<h1 style="text-align:center;color:#00ff00;font-size:44px;text-shadow:0 0 30px #00ff00">UNDEOBFUSCATEABLE 2025</h1>
-<textarea id="i" placeholder="Paste your Lua script here..."></textarea>
-<div id="s">Ready</div>
-<button onclick="run()">OBFUSCATE NOW</button>
-<button id="copy" onclick="copy()">COPY TO CLIPBOARD</button>
-<button id="download" onclick="down()">DOWNLOAD .lua</button>
+  <h1>UNDEOBFUSCATEABLE 2025</h1>
+  <textarea id="i" placeholder="Paste your Lua script here..."></textarea>
+  <div id="s">Ready</div>
+  <button onclick="obfuscate()">OBFUSCATE NOW</button>
 </div>
 
 <script>
-let result=""
-const s=document.getElementById("s"),c=document.getElementById("copy"),d=document.getElementById("download")
-const R=(k,m)=>{let S=[],i=0,j=0,x,out=[];for(i=0;i<256;i++)S[i]=i;for(i=0;i<256;i++){j=(j+S[i]+k.charCodeAt(i%k.length))%256;[S[i],S[j]]=[S[j],S[i]]}i=j=0;for(let a of m){i=(i+1)%256;j=(j+S[i])%256;[S[i],S[j]]=[S[j],S[i]];out.push(a.charCodeAt(0)^S[(S[i]+S[j])%256])}return String.fromCharCode(...out)}
-const X=(a,b)=>a.split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^(b.charCodeAt(i%b.length)+i))).join('')
-const B=(n)=>n.toString(2).padStart(8,'0')
-const U=(s)=>unescape(encodeURIComponent(s))
-const E=(s)=>btoa(U(s))
-const D=(s)=>decodeURIComponent(escape(atob(s)))
+function obfuscate() {
+  let src = document.getElementById("i").value.trim();
+  if (!src) return alert("Paste some Lua first!");
 
-function run(){
-let src=document.getElementById("i").value.trim()
-if(!src)return alert("Empty")
-try{fengari.load(src);s.innerHTML="Valid Lua"}catch(e){s.innerHTML="Invalid Lua";return}
-let key='x'+Math.random().toString(36).substring(2)
-let p=E(src)
-for(let i=0;i<9;i++){
-p=E(R(key+i+Date.now(),p))
-p=X(p,key+i*7)
-p=E(p.split('').reverse().join(''))
-}
-let junk=''
-for(let i=0;i<19999;i++)junk+=`local _${Math.random().toString(36).slice(2)}=${Math.random()}--${Math.random().toString(36)}\n`
-let vm=`
-local function _0()end
-${junk}
-local X,R=string.char,string.dump
-load(R(_G["\\114\\117\\110"](function()
-local k="${key}"
-local d="${p}"
-for i=9,1,-1 do
-d=D(d:sub(1,#d):reverse())
-d=R(k..i*7,d)
-d=D(R(k..i..os.time(),d))
-end
-return load(D(d))()
-end)))()
-`
-result=vm
-c.style.display=d.style.display="inline-flex"
-s.innerHTML="Done — Impossible to deobfuscate"
-}
-function copy(){
-navigator.clipboard.writeText(result)
-s.innerHTML="Copied to clipboard!"
-}
-function down(){
-let b=new Blob([result],{type:"text/plain"})
-let u=URL.createObjectURL(b)
-let a=document.createElement("a")
-a.href=u;a.download="script.lua";a.click()
-URL.revokeObjectURL(u)
-s.innerHTML="Downloaded"
+  try { fengari.load(src) } 
+  catch(e) { document.getElementById("s").innerHTML = "Invalid Lua script"; return; }
+
+  let key = 'x' + Math.random().toString(36).substring(2) + Date.now();
+  let p = btoa(unescape(encodeURIComponent(src)));
+
+  for(let i = 0; i < 12; i++) {
+    p = btoa(p.split('').reverse().join(''));
+    p = btoa(p.split('').map((c,j) => String.fromCharCode(c.charCodeAt(0) ^ (key.charCodeAt(j%key.length) + i*13))).join(''));
+    p = btoa(String.fromCharCode(...p.split('').map(c => c.charCodeAt(0) ^ 0x55)));
+  }
+
+  let junk = '';
+  for(let i = 0; i < 25000; i++) 
+    junk += `local _${Math.random().toString(36).slice(2)}=${Math.random()}--${Math.random().toString(36)}\n`;
+
+  let final = `load(string.dump(_G["\\114\\117\\110"])(function()\n${junk}return load((function() local d="${p}" local k="${key}" for i=12,1,-1 do d=string.reverse(d) d=(d:gsub('.',function(c) return string.char(bit32.bxor(c:byte(),0x55)) end)) d=(d:gsub('.',function(c,j) return string.char(bit32.bxor(c:byte(),k:byte((j%#k)+1)+i*13)) end)) d=string.reverse(d) end return d end)()))())`;
+
+  document.getElementById("i").value = final;
+  document.getElementById("s").innerHTML = "OBFUSCATED — Select all and copy manually";
 }
 </script>
 </body>
