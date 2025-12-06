@@ -2,25 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>UNDEOBFUSCATEABLE 2025</title>
+<title>UOBFUSCATING 2025</title>
 <style>
   body{margin:0;padding:0;background:#000;color:#0f0;font-family:Consolas;overflow:hidden}
   .bg{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(45deg,#000,#0a0a1f,#1a0033);background-size:600%;animation:g 20s infinite;z-index:-1}
   @keyframes g{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   .c{width:90%;max-width:960px;margin:50px auto;padding:40px;background:rgba(0,0,15,0.95);border:4px solid #00ff00;border-radius:20px;box-shadow:0 0 80px #00ff00}
-  textarea{width:100%;height:450px;background:#000;color:#00ff00;border:3px solid #00ff00;border-radius:14px;padding:18px;font-size:16px;resize:none;outline:none}
-  button{margin:30px auto;display:block;padding:22px 60px;background:#00ff00;color:#000;border:none;border-radius:14px;cursor:pointer;font-weight:bold;font-size:24px;transition:.3s}
-  button:hover{background:#33ff33;transform:scale(1.15);box-shadow:0 0 50px #00ff00}
-  h1{text-align:center;color:#00ff00;text-shadow:0 0 40px #00ff00;font-size:50px}
-  #s{margin-top:15px;text-align:center;font-size:19px;color:#00ff00}
+  textarea{width:100%;height:460px;background:#000;color:#00ff00;border:3px solid #00ff00;border-radius:14px;padding:18px;font-size:16px;resize:none;outline:none}
+  button{margin:30px auto;display:block;padding:22px 70px;background:#00ff00;color:#000;border:none;border-radius:14px;cursor:pointer;font-weight:bold;font-size:26px;transition:.3s}
+  button:hover{background:#33ff33;transform:scale(1.15);box-shadow:0 0 60px #00ff00}
+  h1{text-align:center;color:#00ff00;text-shadow:0 0 50px #00ff00;font-size:52px}
+  #s{margin-top:15px;text-align:center;font-size:20px;color:#00ff00}
 </style>
 </head>
 <body>
 <div class="bg"></div>
 <div class="c">
-  <h1>UNDEOBFUSCATEABLE 2025</h1>
-  <textarea id="i" placeholder="Paste your Lua script here..."></textarea>
-  <div id="s">Ready – AI will cry</div>
+  <h1>UOBFUSCATING 2025</h1>
+  <textarea id="i" placeholder="Paste your Roblox/Lua script here..."></textarea>
+  <div id="s">Ready – No deobfuscator survives</div>
   <button onclick="obfuscate()">OBFUSCATE NOW</button>
 </div>
 
@@ -31,54 +31,43 @@ function obfuscate() {
   const status = document.getElementById("s");
   let src = input.value.trim();
 
-  if (!src) {
-    alert("Paste some Lua first!");
-    return;
-  }
-
-  // Validate Lua (optional – remove if you want to skip)
-  try { fengari.load(src); } catch(e) {
-    status.innerHTML = "Invalid Lua – still obfuscating anyway";
-  }
+  if (!src) return alert("Paste a script first!");
 
   status.innerHTML = "Obfuscating...";
 
-  // Generate random keys
   const k1 = Math.random().toString(36).substring(2) + Date.now();
   const k2 = Math.random().toString(36).substring(2);
+  let data = [...unescape(encodeURIComponent(src))].map(c => c.charCodeAt(0));
 
-  // Start with base64 of source
-  let p = btoa(unescape(encodeURIComponent(src)));
-
-  // 9 LAYERS OF DESTRUCTION
-  for(let i = 0; i < 9; i++) {
-    p = btoa(p.split('').reverse().join(''));                                        // reverse + b64
-    p = btoa(p.split('').map((c,j) => String.fromCharCode(c.charCodeAt() ^ (k1.charCodeAt(j % k1.length) + i*19))).join('')); // XOR layer 1
-    p = btoa(String.fromCharCode(...p.split('').map(c => c.charCodeAt() ^ 0xAA)));    // bit-flip
-    p = btoa(p.split('').map((c,j) => String.fromCharCode(c.charCodeAt() ^ (k2.charCodeAt(j % k2.length) + i*27))).join('')); // XOR layer 2
-    p = btoa(p.split('').reverse().join(''));                                        // reverse again
+  // 9 LAYERS – NO BASE64
+  for(let layer = 0; layer < 9; layer++) {
+    data.reverse();
+    for(let i = 0; i < data.length; i++) data[i] ^= (k1.charCodeAt(i % k1.length) + layer * 23) & 0xFF;
+    for(let i = 0; i < data.length; i++) data[i] ^= 0xAA;
+    for(let i = 0; i < data.length; i++) data[i] ^= (k2.charCodeAt(i % k2.length) + layer * 31) & 0xFF;
+    data.reverse();
   }
 
-  // 30,000 lines of pure AI-confusing junk
+  // 35,000 lines of junk
   let junk = "";
-  for(let i = 0; i < 30000; i++) {
-    junk += `local a${i}=function()return ${Math.random()>0.5?"true":"false"}end--${Math.random().toString(36)}\n`;
+  for(let i = 0; i < 35000; i++) {
+    junk += `local _${Math.random().toString(36).slice(2)}=function()return math.random()end--${Math.random().toString(36)}\n`;
   }
 
-  // Final self-decrypting payload
-  const final = `load(string.dump((function()${junk}return _G end)()))(function()
-    local d,b,c="${p}","${k1}","${k2}"
-    for i=9,1,-1 do
-      d=d:reverse():gsub(".",function(ch,j)return string.char(bit32.bxor(ch:byte(),c:byte((j%#c)+1)+i*27))end)
-      d=d:gsub(".",function(ch)return string.char(bit32.bxor(ch:byte(),170))end)
-      d=d:gsub(".",function(ch,j)return string.char(bit32.bxor(ch:byte(),b:byte((j%#b)+1)+i*19))end):reverse()
+  const final = `load(string.dump((function()${junk}return getfenv end)()))(function()
+    local d={${data.join(",")}}
+    local k1,k2="${k1}","${k2}"
+    for l=9,1,-1 do
+      for i=1,#d do d[i]=bit32.bxor(d[i],(k2:byte(i%#k2+1)+l*31)%256)end
+      for i=1,#d do d[i]=bit32.bxor(d[i],170)end
+      for i=1,#d do d[i]=bit32.bxor(d[i],(k1:byte(i%#k1+1)+l*23)%256)end
+      for i=1,#d/2 do local t=d[i];d[i]=d[#d-i+1];d[#d-i+1]=t end
     end
-    return load(d)()
+    return load(string.char(table.unpack(d)))()
   end)`;
 
-  // Replace the textarea instantly
   input.value = final;
-  status.innerHTML = "OBFUSCATED – Select all & copy (Ctrl+A → Ctrl+C)";
+  status.innerHTML = "OBFUSCATED – Select all & copy";
 }
 </script>
 </body>
