@@ -2,73 +2,324 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>UOBFUSCATING 2025</title>
+<title>E Man's Obfuscator v1.0.0</title>
 <style>
-  body{margin:0;padding:0;background:#000;color:#0f0;font-family:Consolas;overflow:hidden}
+  body{margin:0;padding:0;background:#000;color:#0f0;font-family:Consolas;overflow-x:hidden}
   .bg{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(45deg,#000,#0a0a1f,#1a0033);background-size:600%;animation:g 20s infinite;z-index:-1}
   @keyframes g{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-  .c{width:90%;max-width:960px;margin:50px auto;padding:40px;background:rgba(0,0,15,0.95);border:4px solid #00ff00;border-radius:20px;box-shadow:0 0 80px #00ff00}
-  textarea{width:100%;height:460px;background:#000;color:#00ff00;border:3px solid #00ff00;border-radius:14px;padding:18px;font-size:16px;resize:none;outline:none}
-  button{margin:30px auto;display:block;padding:22px 70px;background:#00ff00;color:#000;border:none;border-radius:14px;cursor:pointer;font-weight:bold;font-size:26px;transition:.3s}
-  button:hover{background:#33ff33;transform:scale(1.15);box-shadow:0 0 60px #00ff00}
-  h1{text-align:center;color:#00ff00;text-shadow:0 0 50px #00ff00;font-size:52px}
-  #s{margin-top:15px;text-align:center;font-size:20px;color:#00ff00}
+  .c{width:90%;max-width:960px;margin:30px auto;padding:35px;background:rgba(0,0,15,0.9);border:3px solid #00ff00;border-radius:20px;box-shadow:0 0 60px #00ff00}
+  textarea{width:100%;height:350px;background:#000;color:#00ff00;border:2px solid #00ff00;border-radius:12px;padding:16px;font-size:15px;resize:none;outline:none;font-family:Consolas}
+  .layer-btn{margin:8px;padding:15px 30px;background:#00ff00;color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:16px;transition:.3s;min-width:120px}
+  .layer-btn:hover{background:#33ff33;transform:scale(1.05)}
+  .layer-btn.active{background:#ff00ff;color:#fff;box-shadow:0 0 20px #ff00ff}
+  .action-btn{margin:10px;padding:18px 40px;background:#0080ff;color:#fff;border:none;border-radius:12px;cursor:pointer;font-weight:bold;font-size:18px;transition:.3s}
+  .action-btn:hover{background:#33a3ff;transform:scale(1.1)}
+  .action-btn.obfuscate{background:#ff0066;font-size:22px;padding:20px 50px}
+  .action-btn.obfuscate:hover{background:#ff3388}
+  .btn-container{text-align:center;margin-top:20px}
+  .layer-container{text-align:center;margin:20px 0;padding:20px;background:rgba(0,50,0,0.3);border-radius:15px;border:2px solid #00ff00}
+  .mode-container{text-align:center;margin:15px 0;padding:15px;background:rgba(0,30,50,0.4);border-radius:15px;border:2px solid #0ff}
+  .mode-btn{margin:5px;padding:12px 35px;background:#0ff;color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:16px;transition:.3s}
+  .mode-btn:hover{background:#3ff;transform:scale(1.05)}
+  .mode-btn.active{background:#ff9900;color:#fff;box-shadow:0 0 20px #ff9900}
+  h1{text-align:center;color:#00ff00;text-shadow:0 0 30px #00ff00;margin-bottom:5px}
+  .subtitle{text-align:center;color:#0ff;font-size:18px;margin-top:5px;text-shadow:0 0 20px #0ff}
+  #s{margin-top:15px;text-align:center;font-size:17px;min-height:25px}
+  .layer-label{color:#0ff;font-size:18px;font-weight:bold;margin-bottom:15px}
+  .detection-badge{display:inline-block;padding:8px 20px;border-radius:8px;font-weight:bold;margin-top:10px;font-size:16px}
+  .lua-badge{background:#4169e1;color:#fff}
+  .luau-badge{background:#ff6b35;color:#fff}
 </style>
 </head>
 <body>
 <div class="bg"></div>
 <div class="c">
-  <h1>UOBFUSCATING 2025</h1>
-  <textarea id="i" placeholder="Paste your Roblox/Lua script here..."></textarea>
-  <div id="s">Ready – No deobfuscator survives</div>
-  <button onclick="obfuscate()">OBFUSCATE NOW</button>
+  <h1>🔥 E MAN'S OBFUSCATOR v1.0.0 🔥</h1>
+  <div class="subtitle">BYTECODE-LEVEL PROTECTION - UNDEOBFUSCATABLE</div>
+  
+  <div class="mode-container">
+    <div class="layer-label">🎯 SELECT MODE 🎯</div>
+    <button class="mode-btn active" onclick="selectMode('auto')">AUTO DETECT</button>
+    <button class="mode-btn" onclick="selectMode('lua')">LUA</button>
+    <button class="mode-btn" onclick="selectMode('luau')">LUAU</button>
+    <div id="detection"></div>
+  </div>
+  
+  <div class="layer-container">
+    <div class="layer-label">🛡️ SELECT OBFUSCATION LAYER 🛡️</div>
+    <button class="layer-btn" onclick="selectLayer(1)">LAYER 1</button>
+    <button class="layer-btn" onclick="selectLayer(2)">LAYER 2</button>
+    <button class="layer-btn" onclick="selectLayer(3)">LAYER 3</button>
+    <button class="layer-btn" onclick="selectLayer(4)">LAYER 4</button>
+    <button class="layer-btn" onclick="selectLayer(5)">LAYER 5</button>
+    <button class="layer-btn" onclick="selectLayer(6)">LAYER 6</button>
+    <button class="layer-btn" onclick="selectLayer(7)">LAYER 7</button>
+    <button class="layer-btn" onclick="selectLayer(8)">LAYER 8</button>
+    <button class="layer-btn active" onclick="selectLayer(9)">LAYER 9</button>
+  </div>
+  
+  <textarea id="i" placeholder="Paste your Lua or Luau script here..." oninput="detectLanguage()"></textarea>
+  <div id="s">Ready - Layer 9 Selected - Auto Detect Mode</div>
+  
+  <div class="btn-container">
+    <button class="action-btn obfuscate" onclick="obfuscate()">⚡ OBFUSCATE NOW ⚡</button>
+    <br>
+    <button class="action-btn" onclick="copyCode()">📋 COPY CODE</button>
+    <button class="action-btn" onclick="downloadCode()">💾 DOWNLOAD</button>
+    <button class="action-btn" onclick="resetCode()">🔄 RESET</button>
+  </div>
 </div>
 
-<script src="https://unpkg.com/fengari-web/dist/fengari-web.js"></script>
 <script>
-function obfuscate() {
-  const input = document.getElementById("i");
-  const status = document.getElementById("s");
-  let src = input.value.trim();
+let originalCode = '';
+let obfuscatedCode = '';
+let selectedLayer = 9;
+let selectedMode = 'auto';
+let detectedLang = null;
 
-  if (!src) return alert("Paste a script first!");
-
-  status.innerHTML = "Obfuscating...";
-
-  const k1 = Math.random().toString(36).substring(2) + Date.now();
-  const k2 = Math.random().toString(36).substring(2);
-  let data = [...unescape(encodeURIComponent(src))].map(c => c.charCodeAt(0));
-
-  // 9 LAYERS – NO BASE64
-  for(let layer = 0; layer < 9; layer++) {
-    data.reverse();
-    for(let i = 0; i < data.length; i++) data[i] ^= (k1.charCodeAt(i % k1.length) + layer * 23) & 0xFF;
-    for(let i = 0; i < data.length; i++) data[i] ^= 0xAA;
-    for(let i = 0; i < data.length; i++) data[i] ^= (k2.charCodeAt(i % k2.length) + layer * 31) & 0xFF;
-    data.reverse();
+function safeBase64Encode(str) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
   }
-
-  // 35,000 lines of junk
-  let junk = "";
-  for(let i = 0; i < 35000; i++) {
-    junk += `local _${Math.random().toString(36).slice(2)}=function()return math.random()end--${Math.random().toString(36)}\n`;
-  }
-
-  const final = `load(string.dump((function()${junk}return getfenv end)()))(function()
-    local d={${data.join(",")}}
-    local k1,k2="${k1}","${k2}"
-    for l=9,1,-1 do
-      for i=1,#d do d[i]=bit32.bxor(d[i],(k2:byte(i%#k2+1)+l*31)%256)end
-      for i=1,#d do d[i]=bit32.bxor(d[i],170)end
-      for i=1,#d do d[i]=bit32.bxor(d[i],(k1:byte(i%#k1+1)+l*23)%256)end
-      for i=1,#d/2 do local t=d[i];d[i]=d[#d-i+1];d[#d-i+1]=t end
-    end
-    return load(string.char(table.unpack(d)))()
-  end)`;
-
-  input.value = final;
-  status.innerHTML = "OBFUSCATED – Select all & copy";
+  return btoa(binary);
 }
+
+function generateBytecodeArray(data) {
+  let arr = [];
+  for(let i = 0; i < data.length; i++) {
+    arr.push(data.charCodeAt(i));
+  }
+  return arr;
+}
+
+function selectMode(mode) {
+  selectedMode = mode;
+  const btns = document.querySelectorAll('.mode-btn');
+  btns.forEach(btn => {
+    const btnText = btn.textContent.toLowerCase();
+    btn.classList.toggle('active', 
+      (mode === 'auto' && btnText.includes('auto')) ||
+      (mode === 'lua' && btnText === 'lua') ||
+      (mode === 'luau' && btnText === 'luau')
+    );
+  });
+  updateStatus();
+  if (mode !== 'auto') {
+    document.getElementById("detection").innerHTML = '';
+  } else {
+    detectLanguage();
+  }
+}
+
+function selectLayer(layer) {
+  selectedLayer = layer;
+  const btns = document.querySelectorAll('.layer-btn');
+  btns.forEach((btn, idx) => {
+    btn.classList.toggle('active', idx + 1 === layer);
+  });
+  updateStatus();
+}
+
+function detectLanguage() {
+  if (selectedMode !== 'auto') return;
+  
+  const code = document.getElementById("i").value;
+  if (!code.trim()) {
+    document.getElementById("detection").innerHTML = '';
+    detectedLang = null;
+    return;
+  }
+
+  const luauFeatures = [
+    /\btype\s+\w+\s*=/, /:\s*string\b/, /:\s*number\b/, /:\s*boolean\b/,
+    /\bVector3\./, /\bInstance\b/, /\bgame\./, /\bworkspace\./, /\bscript\./
+  ];
+
+  let luauScore = luauFeatures.filter(r => r.test(code)).length;
+
+  if (luauScore > 0 || /\b(game|workspace|script)\b/.test(code)) {
+    detectedLang = 'luau';
+    document.getElementById("detection").innerHTML = 
+      '<div class="detection-badge luau-badge">🎮 LUAU DETECTED</div>';
+  } else {
+    detectedLang = 'lua';
+    document.getElementById("detection").innerHTML = 
+      '<div class="detection-badge lua-badge">🌙 LUA DETECTED</div>';
+  }
+}
+
+function updateStatus() {
+  const modeText = selectedMode === 'auto' ? 'Auto Detect' : selectedMode.toUpperCase();
+  document.getElementById("s").innerHTML = `Ready - Layer ${selectedLayer} Selected - ${modeText} Mode`;
+}
+
+function obfuscate() {
+  let src = document.getElementById("i").value.trim();
+  if (!src) return alert("❌ Paste some code first!");
+
+  originalCode = src;
+  let targetLang = selectedMode === 'auto' ? (detectedLang || 'lua') : selectedMode;
+
+  try {
+    // Multi-layer bytecode transformation with XOR chains
+    let encoded = safeBase64Encode(src);
+    let key = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
+    let salt = Array.from({length: 16}, () => Math.floor(Math.random() * 256));
+    
+    // Apply multi-layer XOR encryption
+    for(let layer = 0; layer < selectedLayer; layer++) {
+      let temp = '';
+      for(let i = 0; i < encoded.length; i++) {
+        let xorKey = key[(i + layer * 7) % key.length];
+        let saltKey = salt[(i + layer * 3) % salt.length];
+        temp += String.fromCharCode(encoded.charCodeAt(i) ^ xorKey ^ saltKey ^ (layer * 13));
+      }
+      encoded = safeBase64Encode(temp);
+    }
+    
+    // Convert to bytecode array
+    let bytecodeArr = generateBytecodeArray(encoded);
+    
+    // Format arrays with proper line breaks (10 values per line)
+    function formatByteArray(arr) {
+      let lines = [];
+      for(let i = 0; i < arr.length; i += 10) {
+        lines.push(arr.slice(i, i + 10).join(','));
+      }
+      return lines.join(',\n');
+    }
+    
+    let formattedBytecode = formatByteArray(bytecodeArr);
+    let formattedKey = formatByteArray(key);
+    let formattedSalt = formatByteArray(salt);
+    
+    // Generate random variable names
+    let vars = {
+      data: '_' + Math.random().toString(36).substr(2, 6),
+      key: '_' + Math.random().toString(36).substr(2, 6),
+      salt: '_' + Math.random().toString(36).substr(2, 6),
+      decode: '_' + Math.random().toString(36).substr(2, 6),
+      temp: '_' + Math.random().toString(36).substr(2, 6),
+      layer: '_' + Math.random().toString(36).substr(2, 6),
+      idx: '_' + Math.random().toString(36).substr(2, 6),
+      result: '_' + Math.random().toString(36).substr(2, 6)
+    };
+    
+    // Generate dummy variables for anti-analysis
+    let dummyVars = '';
+    for(let i = 0; i < 15; i++) {
+      let varName = '_' + Math.random().toString(36).substr(2, 5);
+      let value = Math.floor(Math.random() * 255);
+      dummyVars += `local ${varName}=${value};`;
+    }
+    
+    // Build VM with bytecode format
+    let vm = `-- Obfuscated with E Man's Obfuscator v1.0.0
+local ${vars.data}={
+${formattedBytecode}
+};
+local ${vars.key}={
+${formattedKey}
+};
+local ${vars.salt}={
+${formattedSalt}
+};
+${dummyVars}
+local function ${vars.decode}(${vars.temp},${vars.layer})
+local ${vars.result}={};
+for ${vars.idx}=${vars.layer},1,-1 do
+local _t={};
+for _i=1,#${vars.temp} do
+_t[_i]=bit32.bxor(${vars.temp}[_i],${vars.key}[((_i+${vars.idx}*7)%#${vars.key})+1],${vars.salt}[((_i+${vars.idx}*3)%#${vars.salt})+1],${vars.idx}*13);
+end;
+${vars.temp}=_t;
+end;
+local _s='';
+for _i=1,#${vars.temp} do
+_s=_s..string.char(${vars.temp}[_i]);
+end;
+return _s;
+end;
+return(load or loadstring)(${vars.decode}(${vars.data},${selectedLayer}))();`;
+
+    obfuscatedCode = vm;
+
+    document.getElementById("i").value = obfuscatedCode;
+    document.getElementById("s").innerHTML = `✅ LAYER ${selectedLayer} BYTECODE OBFUSCATION COMPLETE!`;
+    
+  } catch(err) {
+    alert("❌ Obfuscation failed: " + err.message);
+    document.getElementById("s").innerHTML = "❌ Error occurred";
+  }
+}
+
+function copyCode() {
+  let textarea = document.getElementById("i");
+  let code = textarea.value.trim();
+  
+  if (!code) {
+    alert("❌ Nothing to copy!");
+    return;
+  }
+  
+  textarea.select();
+  textarea.setSelectionRange(0, 99999);
+  
+  try {
+    document.execCommand('copy');
+    document.getElementById("s").innerHTML = "✅ Copied to clipboard!";
+    setTimeout(updateStatus, 2000);
+  } catch(e) {
+    navigator.clipboard.writeText(code).then(() => {
+      document.getElementById("s").innerHTML = "✅ Copied!";
+      setTimeout(updateStatus, 2000);
+    }).catch(() => {
+      alert("❌ Failed to copy.");
+    });
+  }
+}
+
+function downloadCode() {
+  let code = document.getElementById("i").value.trim();
+  
+  if (!code) {
+    alert("❌ Nothing to download!");
+    return;
+  }
+  
+  let targetLang = selectedMode === 'auto' ? (detectedLang || 'lua') : selectedMode;
+  let blob = new Blob([code], { type: 'text/plain' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = `eman_obf_${targetLang}_l${selectedLayer}_${Date.now()}.lua`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  document.getElementById("s").innerHTML = "✅ Downloaded!";
+  setTimeout(updateStatus, 2000);
+}
+
+function resetCode() {
+  if (originalCode) {
+    document.getElementById("i").value = originalCode;
+    document.getElementById("s").innerHTML = "🔄 Reset";
+    detectLanguage();
+    setTimeout(updateStatus, 2000);
+  } else {
+    document.getElementById("i").value = '';
+    document.getElementById("detection").innerHTML = '';
+    detectedLang = null;
+    updateStatus();
+  }
+}
+
+selectMode('auto');
 </script>
 </body>
 </html>
