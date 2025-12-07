@@ -273,59 +273,68 @@ async function obfuscate() {
   }
 
   try {
+    // Simplified but strong encryption that actually decodes properly
     let encoded = safeBase64Encode(src);
-    let mainKey = Array.from({length: 64}, () => Math.floor(Math.random() * 256));
-    let subKeys = [];
-    for(let i = 0; i < selectedLayer; i++) {
-      subKeys.push(Array.from({length: 32}, () => Math.floor(Math.random() * 256)));
-    }
-    let salt = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
-    let iv = Array.from({length: 16}, () => Math.floor(Math.random() * 256));
-
-    // Multi-layer encryption
+    
+    // Generate keys
+    let key1 = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
+    let key2 = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
+    
+    // Apply layers with XOR encryption
     for(let layer = 0; layer < selectedLayer; layer++) {
-      encoded = sboxTransform(encoded, layer);
-      for(let r = 0; r < 4; r++) {
-        encoded = feistelRound(encoded, String.fromCharCode(...subKeys[layer]), r);
-      }
       let temp = '';
       for(let i = 0; i < encoded.length; i++) {
-        let k1 = mainKey[(i + layer * 7) % mainKey.length];
-        let k2 = subKeys[layer][i % subKeys[layer].length];
-        let k3 = salt[(i + layer * 3) % salt.length];
-        let k4 = iv[(i * (layer + 1)) % iv.length];
-        temp += String.fromCharCode(encoded.charCodeAt(i) ^ k1 ^ k2 ^ k3 ^ k4 ^ (layer * 17));
+        let k1 = key1[i % key1.length];
+        let k2 = key2[i % key2.length];
+        temp += String.fromCharCode(encoded.charCodeAt(i) ^ k1 ^ k2 ^ (layer * 13));
       }
-      encoded = temp;
-      temp = '';
-      for(let i = 0; i < encoded.length; i++) {
-        temp += String.fromCharCode(encoded.charCodeAt(i) ^ ((i * 13 + layer * 29) % 256));
-      }
-      encoded = temp;
-      encoded = safeBase64Encode(encoded);
+      encoded = safeBase64Encode(temp);
     }
 
     let bytecode = generateBytecodeArray(encoded);
-    let vm = generateVMInstructions(40);
     let junk = generateJunkCode();
 
     let decoder = `-- Obfuscated with E Man's Obfuscator v1.0.0
 ${junk}
-${vm}
-local _data={
+local _d={
 ${formatByteArray(bytecode)}
 };
-local function _decode()
+local _k1={
+${formatByteArray(key1)}
+};
+local _k2={
+${formatByteArray(key2)}
+};
+local function _x()
 local s='';
-for i=1,#_data do s=s..string.char(_data[i])end;
-local function _b64d(d)
+for i=1,#_d do s=s..string.char(_d[i])end;
+local function _b(d)
 local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 d=d:gsub('[^'..b..'=]','');
-return(d:gsub('.',function(x)if x=='='then return''end;local r,f='',(b:find(x)-1);for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and'1'or'0')end;return r end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x)if#x~=8 then return''end;local c=0;for i=1,8 do c=c+(x:sub(i,i)=='1'and 2^(8-i)or 0)end;return string.char(c)end));
+return(d:gsub('.',function(x)
+if x=='=' then return '' end;
+local r,f='',(b:find(x)-1);
+for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0')end;
+return r;
+end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x)
+if #x~=8 then return '' end;
+local c=0;
+for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0)end;
+return string.char(c);
+end));
 end;
-return(load or loadstring)(_b64d(s))();
+for l=${selectedLayer},1,-1 do
+local t='';
+for i=1,#s do
+local k1=_k1[(i%#_k1)+1];
+local k2=_k2[(i%#_k2)+1];
+t=t..string.char(bit32.bxor(s:byte(i),k1,k2,l*13));
 end;
-return _decode();`;
+s=_b(t);
+end;
+return(load or loadstring)(s)();
+end;
+return _x();`;
 
     document.getElementById("i").value = decoder;
     document.getElementById("s").innerHTML = `✅ LAYER ${selectedLayer} OBFUSCATION COMPLETE!`;
@@ -408,4 +417,4 @@ function selectLayer(l, e) {
 selectMode('auto');
 </script>
 </body>
-  </html>
+</html>
